@@ -204,8 +204,8 @@
 </header>
 
 <section class="rules">
-  <div class="rule cold"><div class="t">冷菜 <b>≤ 8</b> 道</div><div class="d">APPETIZERS</div></div>
-  <div class="rule hot"><div class="t">热菜 <b>≤ 14</b> 道</div><div class="d">SIGNATURES</div></div>
+  <div class="rule cold"><div class="t">冷菜 <b>≤ 6</b> 道</div><div class="d">APPETIZERS</div></div>
+  <div class="rule hot"><div class="t">热菜 <b>≤ 10</b> 道</div><div class="d">SIGNATURES</div></div>
   <div class="rule dim"><div class="t">点心 <b>≤ 2</b> 道</div><div class="d">DIM SUM</div></div>
 </section>
 
@@ -219,8 +219,8 @@
 <div class="bar">
   <div class="sum">
     <div class="row1">
-      <span>冷 <b id="cCold">0</b>/8</span>
-      <span>热 <b id="cHot">0</b>/14</span>
+      <span>冷 <b id="cCold">0</b>/6</span>
+      <span>热 <b id="cHot">0</b>/10</span>
       <span>点 <b id="cDim">0</b>/2</span>
     </div>
     <div class="row2">合计 <span class="total" id="totalPrice">¥0</span></div>
@@ -251,7 +251,7 @@
 
 <script>
 /* ================= 菜单数据（来源：乡野狂厨菜单 终版v7） ================= */
-var LIMIT = {cold:8, hot:14, dim:2};
+var LIMIT = {cold:6, hot:10, dim:2};
 var MENU = {
   cold: [
     {n:"糟卤练塘茭白", sp:"/例", p:22},

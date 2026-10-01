@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>乡野狂厨 · 点菜投票</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --ink:#2b2118;
+    --ink-2:#5a4a3a;
+    --bg:#f6f0e4;
+    --card:#fffdf8;
+    --line:#e8ddc9;
+    --main:#b4532a;
+    --main-dark:#8f3d1d;
+    --main-soft:#f7e3d3;
+    --gold:#d9a85a;
+    --green:#3f6b4f;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--bg)}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);
+    padding-bottom:110px;
+    background:
+      radial-gradient(1200px 400px at 20% -5%, rgba(217,164,65,.12), transparent 60%),
+      radial-gradient(900px 400px at 90% 15%, rgba(180,83,42,.08), transparent 60%),
+      #f6f0e4;
+  }
+  /* ===== Header ===== */
+  header{
+    background:linear-gradient(160deg,#2b2118 0%,#3a2c1e 55%,#4a3520 100%);
+    color:#f5e9d2;padding:26px 18px 20px;text-align:center;position:relative;overflow:hidden;
+  }
+  header::after{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(600px 200px at 50% -40%, rgba(217,164,65,.28), transparent 70%);
+    pointer-events:none;
+  }
+  .brand-en{letter-spacing:.42em;font-size:11px;color:var(--gold);font-family:Georgia,"Times New Roman",serif;text-transform:uppercase;opacity:.9}
+  h1{font-family:"Songti SC","STSong","SimSun",serif;font-size:30px;font-weight:700;letter-spacing:.18em;margin:8px 0 6px}
+  .sub{font-size:13px;color:#d9c7a8;letter-spacing:.12em}
+  .tagline{margin-top:12px;font-size:12px;color:#c9b48c;letter-spacing:.2em}
+  /* ===== Rules ===== */
+  .rules{display:flex;gap:10px;padding:14px 14px 0;max-width:860px;margin:0 auto}
+  .rule{
+    flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:12px 10px;text-align:center;box-shadow:0 2px 10px rgba(43,33,24,.05);
+  }
+  .rule .t{font-size:14px;font-weight:700}
+  .rule .t b{color:var(--main)}
+  .rule .d{font-size:11px;color:var(--ink-2);margin-top:4px;letter-spacing:.08em}
+  .rule.hot .t b{color:#b3541e}
+  .rule.dim .t b{color:var(--green)}
+  /* ===== Voter ===== */
+  .voter{
+    max-width:860px;margin:10px auto 0;padding:12px 14px;background:var(--card);
+    border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;gap:10px;
+    box-shadow:0 2px 10px rgba(60,33,24,.05);
+  }
+  .voter label{font-size:13px;font-weight:600;white-space:nowrap;color:var(--ink-2)}
+  .voter input{
+    flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:15px;
+    background:#fffdf6;color:var(--ink);outline:none;font-family:inherit;
+  }
+  .voter input:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(180,83,42,.12)}
+  /* ===== Sections ===== */
+  main{max-width:860px;margin:18px auto 0;padding:0 14px}
+  section.block{margin-bottom:26px}
+  .block-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;padding-left:2px}
+  .block-head .no{font-family:Georgia,serif;font-size:13px;color:var(--gold);letter-spacing:.1em}
+  .block-head h2{font-family:"Songti SC","STSong","SimSun",serif;font-size:22px;letter-spacing:.08em}
+  .block-head .en{font-size:10px;color:#a8926e;letter-spacing:.22em;text-transform:uppercase;margin-top:2px}
+  .block-head .cnt{
+    margin-left:auto;font-size:12px;color:var(--ink-2);background:var(--main-soft);
+    padding:4px 10px;border-radius:20px;font-weight:600;white-space:nowrap;
+  }
+  .block-head .cnt b{color:var(--main);font-size:14px}
+  .block-head .cnt.over b{color:#c62828}
+  .block-head .cnt.over{background:#fde7e7}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px}
+  .dish{
+    position:relative;background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    padding:12px 12px 10px;cursor:pointer;transition:all .15s ease;user-select:none;
+    box-shadow:0 1px 4px rgba(60,33,24,.04);
+  }
+  .dish:hover{border-color:#d9b98a;transform:translateY(-1px)}
+  .dish.on{border-color:var(--main);background:linear-gradient(180deg,#fff7ef,#fdeee0);box-shadow:0 4px 14px rgba(180,83,42,.18)}
+  .dish .nm{font-size:14px;font-weight:600;line-height:1.35;padding-right:18px}
+  .dish .sp{font-size:11px;color:#9c8a72;margin-top:5px;line-height:1.3}
+  .dish .pr{margin-top:8px;font-size:13px;color:var(--main);font-weight:700}
+  .dish .pr small{font-size:10px;color:#b9875f;font-weight:400}
+  .dish .tick{
+    position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;
+    border:1.5px solid #d8c7ad;display:flex;align-items:center;justify-content:center;
+    font-size:11px;color:transparent;transition:all .15s;
+  }
+  .dish.on .tick{background:var(--main);border-color:var(--main);color:#fff}
+  .dish .badge{
+    position:absolute;top:-7px;right:10px;background:var(--gold);color:#3a2c1e;font-size:10px;
+    padding:2px 8px;border-radius:10px;font-weight:700;letter-spacing:.05em;
+  }
+  /* ===== Bottom bar ===== */
+  .bar{
+    position:fixed;left:0;right:0;bottom:0;background:rgba(43,33,24,.97);color:#f5e9d2;
+    padding:12px 16px;display:flex;align-items:center;gap:14px;z-index:50;
+    box-shadow:0 -4px 20px rgba(0,0,0,.22);
+  }
+  .bar .sum{flex:1;min-width:0}
+  .bar .sum .row1{font-size:12px;color:#d9c7a8;display:flex;gap:12px;flex-wrap:wrap}
+  .bar .sum .row1 b{color:#fff;font-size:13px}
+  .bar .sum .row2{margin-top:3px;font-size:14px;color:#d9c7a8}
+  .bar .sum .row2 .total{font-size:22px;font-weight:800;color:var(--gold);font-family:Georgia,serif;margin-left:4px}
+  .bar .btns{display:flex;gap:8px;flex-shrink:0}
+  .btn{
+    border:none;border-radius:10px;padding:11px 16px;font-size:14px;font-weight:600;cursor:pointer;
+    font-family:inherit;transition:all .15s;
+  }
+  .btn.ghost{background:rgba(255,255,255,.08);color:#f5e9d2;border:1px solid rgba(255,255,255,.18)}
+  .btn.ghost:active{background:rgba(255,255,255,.16)}
+  .btn.primary{background:var(--main);color:#fff}
+  .btn.primary:active{background:var(--main-dark)}
+  .btn.gold{background:var(--gold);color:#3a2c1e}
+  .btn.gold:active{background:#c99135}
+  .btn.copybtn{background:#5d7a4f;color:#fff}
+  .btn.copybtn:active{background:#4a6340}
+  .btn.clearbtn{background:#e8d5c5;color:#9a3412;border:1px solid #d9b98a}
+  .btn.clearbtn:active{background:#dcc0a5}
+  /* ===== Modal ===== */
+  .mask{
+    position:fixed;inset:0;background:rgba(30,22,14,.55);z-index:100;display:none;
+    align-items:flex-end;justify-content:center;
+  }
+  .mask.show{display:flex}
+  .modal{
+    background:#faf5ea;width:100%;max-width:560px;max-height:86vh;border-radius:20px 20px 0 0;
+    display:flex;flex-direction:column;overflow:hidden;animation:up .22s ease;
+  }
+  @keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+  .modal-head{
+    padding:16px 18px;background:var(--ink);color:#f5e9d2;display:flex;align-items:center;gap:10px;
+  }
+  .modal-head h3{font-size:16px;letter-spacing:.06em;flex:1}
+  .modal-head .x{cursor:pointer;font-size:22px;color:#d9c7a8;padding:2px 8px;line-height:1}
+  .modal-head .x:active{color:#fff}
+  .modal-body{overflow-y:auto;padding:16px 18px}
+  .modal-body::-webkit-scrollbar{width:6px}
+  .modal-body::-webkit-scrollbar-thumb{background:#d8cbb0;border-radius:3px}
+  .modal-foot{padding:10px 18px 16px;display:flex;gap:10px}
+  .modal-foot .btn{flex:1;padding:10px 8px;font-size:13px}
+  /* ===== Stat ===== */
+  .cattag{
+    font-size:10px;padding:1px 6px;border-radius:4px;font-weight:700;
+    flex-shrink:0;color:#fff;letter-spacing:.04em;line-height:1.4;
+  }
+  .cattag.cold{background:#5b7f8a}
+  .cattag.hot{background:#b4532a}
+  .cattag.dim{background:#3f6b4f}
+  .rank{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px}
+  .rank h4{font-size:14px;margin-bottom:10px}
+  .rank .item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .rank .item:last-child{border-bottom:none}
+  .rank .item .rankno{
+    width:20px;height:20px;border-radius:6px;background:var(--main-soft);color:var(--main);
+    font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .rank .item .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rank .item .barw{width:56px;height:6px;background:var(--main-soft);border-radius:3px;overflow:hidden;flex-shrink:0}
+  .rank .item .barw i{display:block;height:100%;background:var(--main);border-radius:3px}
+  .rank .item .ct{font-weight:700;color:var(--main);font-size:12px;flex-shrink:0}
+  .vote{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .vote .vi{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .vote .vi .n{font-weight:700;font-size:14px}
+  .vote .vi .t{font-size:11px;color:#9c8a72;margin-left:auto}
+  .vote .lines{font-size:12px;color:var(--ink-2);line-height:1.75}
+  .vote .lines .cat{color:#8f7b5f;font-weight:600}
+  .block-sub{font-size:12px;color:#9c8a72;margin:-6px 0 10px;padding-left:2px}
+  /* ===== Toast ===== */
+  #toast{
+    position:fixed;left:50%;top:22px;transform:translateX(-50%) translateY(-80px);
+    background:rgba(43,33,24,.95);color:#f5e9d2;padding:11px 20px;border-radius:30px;
+    font-size:14px;z-index:200;transition:transform .28s ease;box-shadow:0 6px 24px rgba(0,0,0,.25);
+    max-width:88vw;text-align:center;
+  }
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  .empty{padding:30px;text-align:center;color:#a8926e;font-size:13px}
+  @media (max-width:480px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .bar{padding:10px 12px;gap:10px}
+    .btn{padding:10px 12px;font-size:13px}
+    h1{font-size:26px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-en">WILD CHEF</div>
+  <h1>乡野狂厨</h1>
+  <div class="sub">乡野之鲜 · 国宴之技 · 人间烟火</div>
+  <div class="tagline">宴席点菜投票 · 一人一票</div>
+</header>
+
+<section class="rules">
+  <div class="rule cold"><div class="t">冷菜 <b>≤ 8</b> 道</div><div class="d">APPETIZERS</div></div>
+  <div class="rule hot"><div class="t">热菜 <b>≤ 14</b> 道</div><div class="d">SIGNATURES</div></div>
+  <div class="rule dim"><div class="t">点心 <b>≤ 2</b> 道</div><div class="d">DIM SUM</div></div>
+</section>
+
+<section class="voter">
+  <label for="vname">投票人</label>
+  <input id="vname" type="text" placeholder="请输入您的姓名，用于统计" maxlength="12" autocomplete="name">
+</section>
+
+<main id="menu"></main>
+
+<div class="bar">
+  <div class="sum">
+    <div class="row1">
+      <span>冷 <b id="cCold">0</b>/8</span>
+      <span>热 <b id="cHot">0</b>/14</span>
+      <span>点 <b id="cDim">0</b>/2</span>
+    </div>
+    <div class="row2">合计 <span class="total" id="totalPrice">¥0</span></div>
+  </div>
+  <div class="btns">
+    <button class="btn ghost" id="btnClear">重选</button>
+    <button class="btn gold" id="btnStat">统计</button>
+    <button class="btn primary" id="btnVote">提交投票</button>
+  </div>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">投票统计</h3>
+      <span class="x" id="modalClose">×</span>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn copybtn" id="btnCopy">复制结果</button>
+      <button class="btn ghost" id="btnDone" style="background:#efe6d4;color:#4a3b2b;border:1px solid #d8cbb0">关闭</button>
+      <button class="btn clearbtn" id="btnClearVotes">清除全部</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= 菜单数据（来源：乡野狂厨菜单 终版v7） ================= */
+var LIMIT = {cold:8, hot:14, dim:2};
+var MENU = {
+  cold: [
+    {n:"糟卤练塘茭白", sp:"/例", p:22},
+    {n:"话梅醉虾", sp:"/例·6只", p:68},
+    {n:"烟熏牛蛙", sp:"/例·3只", p:78},
+    {n:"老上海炭烧熏鱼", sp:"/例·8块", p:42},
+    {n:"五香水晶牛腱冻", sp:"/例·8片", p:48},
+    {n:"青瓜拌酱麻鸭", sp:"/例", p:38},
+    {n:"青椒酱黄金皮蛋", sp:"/例·6块", p:28},
+    {n:"葱油白斩鸡", sp:"/例", p:38},
+    {n:"捞汁海蜇丝", sp:"/例", p:48},
+    {n:"雪燕树番茄", sp:"/例·8块", p:42},
+    {n:"清酒鹅肝", sp:"/例·6片", p:88},
+    {n:"爽口花菜梗", sp:"/例", p:18},
+    {n:"柠檬山药", sp:"/例·8块", p:48},
+    {n:"锦绣捞拌时蔬", sp:"/例", p:38},
+    {n:"酱麻汁鲜腐竹", sp:"/例", p:32},
+    {n:"蘸水年轮蟹柳", sp:"/例·10块", p:38},
+    {n:"夫妻肺片（辣）", sp:"/例", p:68},
+    {n:"捞汁象拔蚌", sp:"/例", p:268}
+  ],
+  hot: [
+    {n:"白水鱼茭白馄饨（镇店）", sp:"/例·馄饨6个", p:188},
+    {n:"国宴浓汤煮茭白（主厨推荐）", sp:"/例", p:38},
+    {n:"白炒茭白鳝丝", sp:"/例", p:88},
+    {n:"手打虾胶酿茭白", sp:"/例·6个", p:42},
+    {n:"虾籽腌塘茭白", sp:"/例", p:32},
+    {n:"茭白鲍鱼烧年糕", sp:"/例", p:78},
+    {n:"现杀土鸡汤", sp:"/例", p:168},
+    {n:"清汤狮子头", sp:"/位·1个", p:26},
+    {n:"鸡汤咸肉蒸百叶芋艿", sp:"/例", p:48},
+    {n:"土豆牛腩锅", sp:"/例", p:78},
+    {n:"秘制鹅笃鲜", sp:"/例", p:78},
+    {n:"脆皮酱油河虾", sp:"/例", p:98},
+    {n:"海鲜川味聚宝盆（辣）", sp:"/例", p:98},
+    {n:"鸡头米珍珠虾仁", sp:"/例", p:88},
+    {n:"油浸鹰嘴带鱼", sp:"/例·6块", p:88},
+    {n:"凯里酸汤鱼", sp:"/例", p:68},
+    {n:"韭菜炒河虾", sp:"/例", p:68},
+    {n:"手拆蟹粉油条", sp:"/例·油条6个", p:68},
+    {n:"金蒜蒸丝瓜开片虾", sp:"/例", p:58},
+    {n:"葱油带膏小管", sp:"/例", p:58},
+    {n:"吉利炸鱼排", sp:"/例", p:48},
+    {n:"玫瑰盐火焰田螺", sp:"/例·6个", p:48},
+    {n:"蚝仔（海鲜）烧豆面", sp:"/例", p:48},
+    {n:"XO酱粉丝煲", sp:"/例", p:48},
+    {n:"手抓酥炸黄鱼", sp:"/条", p:10},
+    {n:"果味总统小牛排", sp:"/例", p:128},
+    {n:"大漠孜然羊排", sp:"/例", p:88},
+    {n:"砂锅焖焗牛仔骨", sp:"/例·6块", p:68},
+    {n:"凤梨牛肉", sp:"/例", p:78},
+    {n:"手作稻草扎肉夹饼", sp:"/例·饼6个", p:68},
+    {n:"脆皮烧鸡（半只）", sp:"/例", p:58},
+    {n:"椒盐脆皮猪手", sp:"/例·8块", p:58},
+    {n:"芝麻蒜香骨", sp:"/例·6根", p:58},
+    {n:"虾片脆皮牛肉", sp:"/例", p:48},
+    {n:"新派川味辣子鸡（辣）", sp:"/例", p:52},
+    {n:"无骨鲫鱼塞肉", sp:"/例", p:58},
+    {n:"咸鱼酱腩蒸肉饼", sp:"/例", p:42},
+    {n:"梅菜扣肉夹饼", sp:"/例·饼6个", p:68},
+    {n:"芥兰菜腊味砂锅", sp:"/例", p:48},
+    {n:"松露鲜椒土鸡蛋", sp:"/例", p:42},
+    {n:"大菜龙门面筋", sp:"/例", p:36},
+    {n:"青椒香煎山药", sp:"/例", p:38},
+    {n:"脆皮咸蛋黄南瓜", sp:"/例", p:38},
+    {n:"椒盐珍珠土豆", sp:"/例", p:26},
+    {n:"咸肉手磨豆腐", sp:"/例", p:48},
+    {n:"茄子咸鱼鸡粒煲", sp:"/例", p:42},
+    {n:"翡翠虾肉丝瓜", sp:"/例", p:38},
+    {n:"麻婆臭豆腐（辣）", sp:"/例", p:42},
+    {n:"螺丝肉炒韭菜甜豆", sp:"/例", p:48},
+    {n:"橄榄笋尖炒豆瓣", sp:"/例", p:42}
+  ],
+  dim: [
+    {n:"香葱旺贝锅贴", sp:"/例·4片", p:16},
+    {n:"纸皮糯米烧麦", sp:"/例·3个", p:16},
+    {n:"芝香蟹壳黄", sp:"/例·3个", p:16},
+    {n:"桂花总统拉糕", sp:"/例·6块", p:28},
+    {n:"玫瑰细沙八宝饭", sp:"/例", p:38},
+    {n:"腊味蒸乌米饭", sp:"/例", p:48},
+    {n:"特色船王炒饭", sp:"/例", p:88},
+    {n:"脆米海鲜泡饭", sp:"/例", p:58},
+    {n:"冰花山楂露", sp:"/份", p:18}
+  ]
+};
+
+var CAT_META = {
+  cold:{no:"壹", title:"冷 菜", en:"APPETIZERS · 开胃先声"},
+  hot:{no:"贰", title:"热 菜", en:"SIGNATURES · 乡野锅气"},
+  dim:{no:"叁", title:"点心 · 饭点", en:"DIM SUM & STAPLES · 落胃收梢"}
+};
+var CAT_NAME = {cold:"冷菜", hot:"热菜", dim:"点心"};
+var STORE_KEY = "wildchef_votes_v1";
+
+var selected = {};
+
+/* ================= 工具 ================= */
+function $(id){ return document.getElementById(id); }
+function toast(msg){
+  var el = $("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ el.classList.remove("show"); }, 2400);
+}
+function fmtTotal(t){ return "¥" + t; }
+
+/* ================= 渲染 ================= */
+function renderMenu(){
+  var main = $("menu");
+  main.innerHTML = "";
+  ["cold","hot","dim"].forEach(function(cat){
+    var block = document.createElement("section");
+    block.className = "block";
+    var meta = CAT_META[cat];
+    var items = MENU[cat];
+    var cnt = countCat(cat);
+
+    var head = document.createElement("div");
+    head.className = "block-head";
+    head.innerHTML =
+      '<span class="no">' + meta.no + '</span>' +
+      '<div><h2>' + meta.title + '</h2><div class="en">' + meta.en + '</div></div>' +
+      '<span class="cnt" id="cnt-' + cat + '"><b>' + cnt + '</b> / ' + LIMIT[cat] + '</span>';
+    block.appendChild(head);
+
+    var grid = document.createElement("div");
+    grid.className = "grid";
+    items.forEach(function(d, idx){
+      var key = cat + "|" + idx;
+      var card = document.createElement("div");
+      card.className = "dish";
+      card.dataset.key = key;
+      var html =
+        '<div class="tick">✓</div>' +
+        '<div class="nm">' + d.n + '</div>' +
+        '<div class="sp">' + d.sp + '</div>' +
+        '<div class="pr">¥' + d.p + '</div>';
+      if(d.n.indexOf("镇店") > -1) html += '<div class="badge">镇店</div>';
+      if(d.n.indexOf("主厨推荐") > -1) html += '<div class="badge">主厨推荐</div>';
+      card.innerHTML = html;
+      if(selected[key]) card.classList.add("on");
+      card.addEventListener("click", function(){ toggle(key, cat); });
+      grid.appendChild(card);
+    });
+    block.appendChild(grid);
+    main.appendChild(block);
+  });
+  updateBar();
+}
+
+function filteredCat(cat){
+  var out = [];
+  MENU[cat].forEach(function(item, i){
+    var key = cat + "|" + i;
+    if(selected[key]) out.push({d:item, key:key});
+  });
+  return out;
+}
+function countCat(cat){ return filteredCat(cat).length; }
+
+/* ================= 交互 ================= */
+function toggle(key, cat){
+  var idx = Number(key.split("|")[1]);
+  if(selected[key]){
+    delete selected[key];
+  } else {
+    var cnt = countCat(cat);
+    if(cnt >= LIMIT[cat]){
+      toast(CAT_NAME[cat] + "最多选 " + LIMIT[cat] + " 道（当前已选 " + cnt + " 道）");
+      return;
+    }
+    selected[key] = true;
+  }
+  refresh();
+}
+
+function refresh(){
+  var cards = document.querySelectorAll(".dish");
+  for(var i=0;i<cards.length;i++){
+    var card = cards[i];
+    card.classList.toggle("on", !!selected[card.dataset.key]);
+  }
+  updateBar();
+}
+
+function updateBar(){
+  var total = 0;
+  ["cold","hot","dim"].forEach(function(cat){
+    var cnt = countCat(cat);
+    var map = {cold:"cCold", hot:"cHot", dim:"cDim"};
+    $(map[cat]).textContent = cnt;
+    var el = $("cnt-" + cat);
+    if(el){
+      el.querySelector("b").textContent = cnt;
+      el.classList.toggle("over", cnt >= LIMIT[cat]);
+    }
+    filteredCat(cat).forEach(function(x){ total += x.d.p; });
+  });
+  $("totalPrice").textContent = fmtTotal(total);
+}
+
+/* ================= 提交 ================= */
+function submitVote(){
+  var nm = $("vname").value.trim();
+  if(!nm){ toast("请先填写投票人姓名"); $("vname").focus(); return; }
+  var items = [], total = 0;
+  ["cold","hot","dim"].forEach(function(cat){
+    filteredCat(cat).forEach(function(x){
+      items.push({cat:cat, name:x.d.n, spec:x.d.sp, price:x.d.p});
+      total += x.d.p;
+    });
+  });
+  if(items.length === 0){ toast("请至少选择一道菜"); return; }
+  var vote = {
+    name: nm,
+    items: items,
+    total: total,
+    time: new Date().toLocaleString("zh-CN", {hour12:false})
+  };
+  var votes = loadVotes();
+  votes.push(vote);
+  saveVotes(votes);
+  toast("投票已提交，谢谢 " + nm + "！");
+  openStat(true);
+}
+
+/* ================= 存储 & 统计 ================= */
+function loadVotes(){
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); }
+  catch(e){ return []; }
+}
+function saveVotes(v){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(v)); }
+  catch(e){ toast("保存失败：浏览器存储不可用"); }
+}
+
+function openStat(justSubmitted){
+  var votes = loadVotes();
+  var body = $("modalBody");
+  var title = $("modalTitle");
+  if(justSubmitted){
+    title.textContent = "我的投票 · 已提交";
+    body.innerHTML = renderVoteList(votes.slice(-1));
+  } else {
+    title.textContent = "投票统计";
+    body.innerHTML = renderStat(votes);
+  }
+  $("mask").classList.add("show");
+}
+
+function renderStat(votes){
+  if(votes.length === 0){
+    return '<div class="empty">还没有人投票<br>选好菜后点「提交投票」即可</div>';
+  }
+  var rankMap = {};
+  votes.forEach(function(v){
+    v.items.forEach(function(it){
+      if(!rankMap[it.name]) rankMap[it.name] = {ct:0, cat:it.cat};
+      rankMap[it.name].ct += 1;
+    });
+  });
+  var rank = Object.keys(rankMap).map(function(k){ return {name:k, ct:rankMap[k].ct, cat:rankMap[k].cat}; })
+    .sort(function(a,b){ return b.ct - a.ct; });
+  var maxC = rank.length ? rank[0].ct : 1;
+
+  var h = '<div class="rank"><h4>热门菜品 TOP ' + Math.min(rank.length, 20) + '</h4>';
+  rank.slice(0, 20).forEach(function(r, i){
+    h += '<div class="item">' +
+      '<span class="rankno">' + (i+1) + '</span>' +
+      '<span class="cattag ' + r.cat + '">' + CAT_NAME[r.cat] + '</span>' +
+      '<span class="nm">' + r.name + '</span>' +
+      '<span class="barw"><i style="width:' + Math.round(r.ct / maxC * 100) + '%"></i></span>' +
+      '<span class="ct">' + r.ct + ' 票</span></div>';
+  });
+  h += '</div>';
+  h += '<div class="rank" style="margin-bottom:4px"><h4>投票明细</h4></div>';
+  h += renderVoteList(votes);
+  return h;
+}
+
+function renderVoteList(votes){
+  var h = "";
+  votes.forEach(function(v){
+    var lines = "";
+    ["cold","hot","dim"].forEach(function(cat){
+      var its = v.items.filter(function(it){ return it.cat === cat; });
+      if(its.length){
+        lines += '<div><span class="cat">' + CAT_NAME[cat] + '（' + its.length + '）：</span>' +
+          its.map(function(it){ return it.name + ' ¥' + it.price; }).join("、") + '</div>';
+      }
+    });
+    h += '<div class="vote"><div class="vi">' +
+      '<span class="n">' + v.name + '</span>' +
+      '<span class="t">' + v.time + '</span></div>' +
+      '<div class="lines">' + lines + '</div></div>';
+  });
+  return h;
+}
+
+/* ================= 复制 ================= */
+function copySummary(){
+  var votes = loadVotes();
+  if(votes.length === 0){ toast("暂无投票记录"); return; }
+  var txt = "【乡野狂厨 · 点菜投票结果】\n\n";
+  votes.forEach(function(v){
+    txt += "── " + v.name + "（" + v.time + "）──\n";
+    ["cold","hot","dim"].forEach(function(cat){
+      var its = v.items.filter(function(it){ return it.cat === cat; });
+      if(its.length){
+        txt += CAT_NAME[cat] + "：" + its.map(function(it){ return it.name + " ¥" + it.price; }).join("、") + "\n";
+      }
+    });
+    txt += "\n";
+  });
+  copyText(txt);
+}
+
+function copyText(t){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(function(){ toast("结果已复制，可直接粘贴发送"); })
+      .catch(function(){ fallbackCopy(t); });
+  } else { fallbackCopy(t); }
+}
+function fallbackCopy(t){
+  var ta = document.createElement("textarea");
+  ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); toast("结果已复制，可直接粘贴发送"); }
+  catch(e){ toast("复制失败，请手动复制"); }
+  document.body.removeChild(ta);
+}
+
+/* ================= 初始化 ================= */
+$("btnVote").addEventListener("click", submitVote);
+$("btnStat").addEventListener("click", function(){ openStat(false); });
+$("btnClear").addEventListener("click", function(){
+  selected = {};
+  refresh();
+  toast("已清空全部选择");
+});
+$("btnCopy").addEventListener("click", copySummary);
+$("btnClearVotes").addEventListener("click", function(){
+  if(confirm("确定要清除全部投票记录吗？\n此操作不可恢复！")){
+    localStorage.removeItem(STORE_KEY);
+    closeModal();
+    toast("已清除全部投票记录");
+  }
+});
+function closeModal(){ $("mask").classList.remove("show"); }
+$("modalClose").addEventListener("click", closeModal);
+$("btnDone").addEventListener("click", closeModal);
+$("mask").addEventListener("click", function(e){
+  if(e.target === $("mask")) closeModal();
+});
+
+renderMenu();
+</script>
+</body>
+</html>

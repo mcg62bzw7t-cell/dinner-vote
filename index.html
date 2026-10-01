@@ -214,6 +214,8 @@
   <input id="vname" type="text" placeholder="请输入您的姓名，用于统计" maxlength="12" autocomplete="name">
 </section>
 
+<div style="text-align:center;font-size:11px;color:#a8926e;margin:10px 14px 0;letter-spacing:.05em">投票数据云端同步 · 所有人的投票实时共享</div>
+
 <main id="menu"></main>
 
 <div class="bar">
@@ -344,7 +346,7 @@ var CAT_META = {
   dim:{no:"叁", title:"点心 · 饭点", en:"DIM SUM & STAPLES · 落胃收梢"}
 };
 var CAT_NAME = {cold:"冷菜", hot:"热菜", dim:"点心"};
-var STORE_KEY = "wildchef_votes_v1";
+var JSONBIN_URL = "https://api.jsonbin.io/v3/b/6abe757aac6210605a095be0";
 
 var selected = {};
 
@@ -472,35 +474,63 @@ function submitVote(){
     total: total,
     time: new Date().toLocaleString("zh-CN", {hour12:false})
   };
-  var votes = loadVotes();
-  votes.push(vote);
-  saveVotes(votes);
-  toast("投票已提交，谢谢 " + nm + "！");
-  openStat(true);
+  var btn = $("btnVote");
+  btn.disabled = true; btn.textContent = "提交中…";
+  loadVotes(function(remote){
+    if(remote === null){
+      btn.disabled = false; btn.textContent = "提交投票";
+      toast("网络异常，提交失败，请稍后重试");
+      return;
+    }
+    remote.push(vote);
+    saveVotes(remote, function(ok){
+      btn.disabled = false; btn.textContent = "提交投票";
+      if(ok){
+        toast("投票已提交，谢谢 " + nm + "！");
+        openStat(true, vote);
+      }else{
+        toast("网络异常，提交失败，请稍后重试");
+      }
+    });
+  });
 }
 
 /* ================= 存储 & 统计 ================= */
-function loadVotes(){
-  try { return JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); }
-  catch(e){ return []; }
+function loadVotes(cb){
+  fetch(JSONBIN_URL + "/latest")
+    .then(function(r){ return r.json(); })
+    .then(function(d){ cb(d.record && d.record.votes ? d.record.votes : []); })
+    .catch(function(){ cb(null); });
 }
-function saveVotes(v){
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(v)); }
-  catch(e){ toast("保存失败：浏览器存储不可用"); }
+function saveVotes(v, cb){
+  fetch(JSONBIN_URL, {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({votes: v})
+  })
+    .then(function(r){ return r.json(); })
+    .then(function(){ cb(true); })
+    .catch(function(){ cb(false); });
 }
 
-function openStat(justSubmitted){
-  var votes = loadVotes();
+function openStat(justSubmitted, myVote){
   var body = $("modalBody");
   var title = $("modalTitle");
-  if(justSubmitted){
-    title.textContent = "我的投票 · 已提交";
-    body.innerHTML = renderVoteList(votes.slice(-1));
-  } else {
-    title.textContent = "投票统计";
-    body.innerHTML = renderStat(votes);
-  }
   $("mask").classList.add("show");
+  if(justSubmitted && myVote){
+    title.textContent = "我的投票 · 已提交";
+    body.innerHTML = renderVoteList([myVote]);
+    return;
+  }
+  title.textContent = "投票统计";
+  body.innerHTML = '<div class="empty">正在加载云端投票数据…</div>';
+  loadVotes(function(votes){
+    if(votes === null){
+      body.innerHTML = '<div class="empty">网络异常，无法加载投票数据<br>请检查网络后重试</div>';
+      return;
+    }
+    body.innerHTML = renderStat(votes);
+  });
 }
 
 function renderStat(votes){
@@ -554,20 +584,25 @@ function renderVoteList(votes){
 
 /* ================= 复制 ================= */
 function copySummary(){
-  var votes = loadVotes();
-  if(votes.length === 0){ toast("暂无投票记录"); return; }
-  var txt = "【乡野狂厨 · 点菜投票结果】\n\n";
-  votes.forEach(function(v){
-    txt += "── " + v.name + "（" + v.time + "）──\n";
-    ["cold","hot","dim"].forEach(function(cat){
-      var its = v.items.filter(function(it){ return it.cat === cat; });
-      if(its.length){
-        txt += CAT_NAME[cat] + "：" + its.map(function(it){ return it.name + " ¥" + it.price; }).join("、") + "\n";
-      }
+  var btn = $("btnCopy");
+  btn.disabled = true;
+  loadVotes(function(votes){
+    btn.disabled = false;
+    if(votes === null){ toast("网络异常，无法获取数据"); return; }
+    if(votes.length === 0){ toast("暂无投票记录"); return; }
+    var txt = "【乡野狂厨 · 点菜投票结果】\n\n";
+    votes.forEach(function(v){
+      txt += "── " + v.name + "（" + v.time + "）──\n";
+      ["cold","hot","dim"].forEach(function(cat){
+        var its = v.items.filter(function(it){ return it.cat === cat; });
+        if(its.length){
+          txt += CAT_NAME[cat] + "：" + its.map(function(it){ return it.name + " ¥" + it.price; }).join("、") + "\n";
+        }
+      });
+      txt += "\n";
     });
-    txt += "\n";
+    copyText(txt);
   });
-  copyText(txt);
 }
 
 function copyText(t){
@@ -595,10 +630,14 @@ $("btnClear").addEventListener("click", function(){
 });
 $("btnCopy").addEventListener("click", copySummary);
 $("btnClearVotes").addEventListener("click", function(){
-  if(confirm("确定要清除全部投票记录吗？\n此操作不可恢复！")){
-    localStorage.removeItem(STORE_KEY);
-    closeModal();
-    toast("已清除全部投票记录");
+  if(confirm("确定要清除全部投票记录吗？\n此操作将清除云端所有人的投票，不可恢复！")){
+    var btn = $("btnClearVotes");
+    btn.disabled = true;
+    saveVotes([], function(ok){
+      btn.disabled = false;
+      if(ok){ closeModal(); toast("已清除全部投票记录"); }
+      else { toast("网络异常，清除失败"); }
+    });
   }
 });
 function closeModal(){ $("mask").classList.remove("show"); }
